@@ -1,0 +1,97 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <RTClib.h>
+
+DS1307 rtc;
+
+#define led1 2
+#define led2 3
+#define Boton 4
+
+int Hora=0;
+int Modo;
+//int BOTON = 7;
+int Valor = 0;    //val se emplea para almacenar el estado del boton
+int Estado = 0;   // 0 LED apagado, mientras que 1 encendido
+int OldValor = 0; // almacena el antiguo valor de val
+long Pot01;       //Variable de Potenciometro
+int ValPot01;     //Valor del Potenciometro Mapeado
+int ContaF1=0;
+int ContaF2=0;
+
+LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+ 
+void setup()
+  {
+    lcd.begin(16, 2);
+    rtc.begin();
+    //rtc.adjust(DateTime(__DATE__, __TIME__)); // Ajusta el horario desde el PC
+    pinMode(led1, OUTPUT);
+    pinMode(led2, OUTPUT);
+    pinMode(Boton,INPUT);
+    lcd.clear();
+  }
+ 
+void loop()
+  {
+    // Fase de Inicializacion de Reloj
+    //----------------------------------------
+    DateTime now = rtc.now();
+    Hora=now.hour();
+
+    if (now.hour()<=11){digitalWrite(led1, HIGH); digitalWrite(led2, LOW);} // Hora LED AM
+    if (now.hour()>=12){digitalWrite(led1, LOW); digitalWrite(led2, HIGH);} // Hora LED PM
+    if (now.hour()>=13){Hora=Hora-12;}  // Convierte hora del formato de 24 Hrs a 12 Hrs
+
+    // Fase de Lectura del Boton
+    //----------------------------------------
+    
+    Valor= digitalRead(Boton); // lee el estado del Boton
+    if ((Valor == HIGH) && (OldValor == LOW)){ Estado=1-Estado;delay(10);}
+    OldValor = Valor; // valor del antiguo estado
+    if (Estado==1){ (Modo=2); }
+      else{(Modo=1);}
+
+    // Fase de impresion de Relog Modo = 1
+    //----------------------------------------
+    if (ContaF1=0){(lcd.clear());}
+    
+    if (ContaF2=0){(lcd.clear());}
+    
+    if (Modo==1)
+      {
+        ContaF1=2;
+        lcd.setCursor ( 0, 0 );
+        lcd.print("Hora: ");
+        if (Hora >=0 && Hora <=9){lcd.print("0"); lcd.print(Hora);}
+        if (Hora >=10){lcd.print(Hora);}
+        lcd.print(":");
+        if (now.minute() >=0 && now.minute() <=9){lcd.print("0"); lcd.print(now.minute());}
+        if (now.minute() >=10){lcd.print(now.minute());}
+        lcd.print(":");
+        if (now.second() >=0 && now.second() <=9){lcd.print("0"); lcd.print(now.second());}
+        if (now.second() >=10){lcd.print(now.second());}
+        lcd.setCursor ( 0, 1 );
+        lcd.print("Fec: ");
+        lcd.print(now.month(), DEC);
+        lcd.print(" ");
+        lcd.print(now.day(), DEC);
+        lcd.print(", ");
+        lcd.print(now.year(), DEC);
+        lcd.print("  ");
+      }
+      
+    // Fase de Sintonizador Modo diferente de 1
+    //----------------------------------------
+    
+    if(Modo!=1)
+      {
+        Pot01=analogRead(A0);
+        ValPot01=map(Pot01, 0, 1023, 0,31);
+        lcd.setCursor (0,0);
+
+        
+        lcd.print("Tuning... ");
+        lcd.print(ValPot01);
+      }
+  }

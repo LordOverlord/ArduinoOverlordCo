@@ -1,0 +1,166 @@
+#define led1 2
+#define led2 3
+#define led3 4
+#define led4 5
+#define led5 6
+#define led6 7
+#define led7 8
+#define led8 9
+#define led9 10
+
+long Escala; //Variable de Asignacion de Tiempo
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+  pinMode(led4, OUTPUT);
+  pinMode(led5, OUTPUT);
+  pinMode(led6, OUTPUT);
+  pinMode(led7, OUTPUT);
+  pinMode(led8, OUTPUT);
+  pinMode(led9, OUTPUT);
+  
+  digitalWrite(led1, LOW);
+  digitalWrite(led2, LOW);
+  digitalWrite(led3, LOW);
+  digitalWrite(led4, LOW);
+  digitalWrite(led5, LOW);
+  digitalWrite(led6, LOW);
+  digitalWrite(led7, LOW);
+  digitalWrite(led8, LOW);
+  digitalWrite(led9, LOW);
+
+  Serial.print("Escala inicial: ");
+  Serial.println(Escala);
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  Escala=analogRead(A0);
+  Serial.print("Escala : ");
+  Serial.println(Escala);
+  if(Escala >= 0 && Escala <=99)
+  {
+      digitalWrite(led1, LOW);
+      digitalWrite(led2, LOW);
+      digitalWrite(led3, LOW);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 100 && Escala <=199)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, LOW);
+      digitalWrite(led3, LOW);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 200 && Escala <=299)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, LOW);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 300 && Escala <=399)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 400 && Escala <=499)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 500 && Escala <=599)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 600 && Escala <=699)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 700 && Escala <=799)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, LOW);
+  }
+  if(Escala >= 800 && Escala <=899)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, HIGH);
+      digitalWrite(led9, LOW);
+  }
+  if(Escala >= 900 && Escala <=1023)
+  {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, HIGH);
+      digitalWrite(led9, HIGH);
+  }
+}

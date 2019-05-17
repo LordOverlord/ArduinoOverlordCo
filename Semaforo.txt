@@ -1,0 +1,89 @@
+#define ledVS1 2
+#define ledAS1 3
+#define ledRS1 4
+
+#define ledVS2 5
+#define ledAS2 6
+#define ledRS2 7
+
+//long Temp;
+int Temp=10000;
+int S1=0;
+int S2=0;
+int Brillo=130;
+int Apaga=0;
+int Parpadeo=1;
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  
+  pinMode(ledVS1, OUTPUT);
+  pinMode(ledAS1, OUTPUT);
+  pinMode(ledRS1, OUTPUT);
+  
+  pinMode(ledVS2, OUTPUT);
+  pinMode(ledAS2, OUTPUT);
+  pinMode(ledRS2, OUTPUT);
+  delay(3000);
+  
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  //Temp=analogRead(A0);
+  //Temp=Temp*10;
+  Serial.println("Inicia Ciclo");
+  Serial.print("Tiempos de espera de ");
+  Serial.print(Temp/1000);
+  Serial.println(" Segundos");
+  analogWrite(ledVS1, Brillo);
+  analogWrite(ledRS2, Brillo);
+  delay(Temp);
+  analogWrite(ledVS1, Apaga);
+  analogWrite(ledAS1, Brillo);
+  Serial.print("Prende Amarillo SA1 ");
+  Serial.print((Temp/2)/1000);
+  Serial.println(" Segundos.");
+  delay(Temp/2);
+  Serial.print("Parpadea Amarillo SA1 ");
+  Serial.print((Temp/2)/500);
+  Serial.println(" Veces");
+  while(Parpadeo<=((Temp/2)/500)){
+    analogWrite(ledAS1, Brillo);
+    delay (500); // Enciende el led amarillo durante 0,5 segundos
+    analogWrite(ledAS1, Apaga); 
+    delay (500); // Apaga el led amarillo durante 0,5 segundos
+    Serial.print("Bucle ");
+    Serial.println(Parpadeo);
+    Parpadeo=Parpadeo+1;
+  }
+  Parpadeo=1;
+  analogWrite(ledAS1, Apaga);
+  analogWrite(ledRS2, Apaga);
+  analogWrite(ledRS1, Brillo);
+  analogWrite(ledVS2, Brillo);
+  delay(Temp);
+  analogWrite(ledVS2, Apaga);
+  analogWrite(ledAS2, Brillo);
+  Serial.print("Prende Amarillo SA2 ");
+  Serial.print((Temp/2)/1000);
+  Serial.println(" Segundos.");
+  delay(Temp/2);
+  Serial.print("Parpadea Amarillo SA2 ");
+  Serial.print((Temp/2)/500);
+  Serial.println(" Veces");
+  while(Parpadeo<=((Temp/2)/500)){
+    analogWrite(ledAS2, Brillo);
+    delay (500); // Enciende el led amarillo durante 0,5 segundos
+    analogWrite(ledAS2, Apaga); 
+    delay (500); // Apaga el led amarillo durante 0,5 segundos
+    Serial.print("Bucle ");
+    Serial.println(Parpadeo);
+    Parpadeo=Parpadeo+1;
+  }
+  Parpadeo=1;
+  analogWrite(ledRS1, Apaga);
+  analogWrite(ledAS2, Apaga);
+  Serial.println("Termina Ciclo");  
+}

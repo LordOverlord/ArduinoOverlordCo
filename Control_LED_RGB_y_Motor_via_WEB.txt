@@ -1,0 +1,210 @@
+#include <ESP8266WiFi.h> //Incluimos la librería para del WiFi
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+ 
+// Definiciones
+#define OLED_RESET 2 //LED_BUILTIN  //4
+Adafruit_SSD1306 display(OLED_RESET);
+
+int ledPinB = 14;   // (Active LOW)
+int ledPinG = 12;   // (Active LOW)
+int ledPinR = 13;   // (Active LOW)
+int Motor01 = 15;   // (Active LOW)
+
+//Credenciales del WiFi
+const char* ssid = "MOTO-NADCorporativo";
+const char* password = "NadGlobal.987";
+
+// Inicio Servidor WEB de ESP8266
+WiFiServer server(80);
+ 
+void setup() {
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); //Inicio Display OLED
+  Serial.begin(9600); //Inicio Puerto Serie Monitor 
+  WiFi.begin(ssid, password);
+    
+// Conecto con la red WiFi en modo estación
+ 
+  Serial.print("Conectando a ");
+  Serial.println(ssid);
+  display.print("AP: ");
+  display.println(ssid);
+  delay(8000);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print("*");
+  }
+  display.clearDisplay();
+  display.display();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.println(ssid);
+  display.println("Visitar WEB");
+  display.print("http://");
+  display.print(WiFi.localIP()); // Mostramos la IP
+  display.println("/");
+  display.display();
+  
+  Serial.print("WiFi conectado ");
+  Serial.println(ssid);
+ 
+// Inicializo el servidor
+  server.begin();
+  Serial.println("Servidor iniciado");
+ 
+// Se Muestra la IP local asignada. URL del servidor.
+  Serial.print("Usa esta URL para conectar al servidor: ");
+  Serial.print("http://");
+  Serial.print(WiFi.localIP());
+  Serial.println("/");
+
+ 
+//Se Inicializan Dispositivos
+
+    pinMode(ledPinB, OUTPUT);
+  digitalWrite(ledPinB, LOW);
+    pinMode(ledPinG, OUTPUT);
+  digitalWrite(ledPinG, LOW);
+    pinMode(ledPinR, OUTPUT);
+  digitalWrite(ledPinR, LOW);
+    pinMode(Motor01, OUTPUT);
+  digitalWrite(Motor01, LOW);
+  
+  }
+
+void loop() {
+  // Comprobacion de instrucciones (Petición)
+  WiFiClient client = server.available();
+  if (!client) {
+    return; // En caso de no haber instrucciones, no se hace nada
+  }
+ 
+  // Espero hasta que el cliente realice una petición
+  Serial.println("¡Instrucciones!");
+  while(!client.available()){
+    delay(1);
+  }
+ 
+  // Leo la primera linea de la petición
+  String request = client.readStringUntil('\r'); // Leo hasta retorno de carro
+  Serial.println(request); //Imprimo la petición
+  client.flush(); //Limpio el buffer
+ 
+// Interpretacion de instrucciones
+
+//================================================================
+  int value_1 = LOW;
+  if (request.indexOf("/LED=ON_1") != -1)  {
+    digitalWrite(ledPinB, HIGH);
+    value_1 = HIGH;
+  }
+    if (request.indexOf("/LED=OFF_1") != -1)  {
+    digitalWrite(ledPinB, LOW);
+    value_1 = LOW;
+  }
+//================================================================ 
+
+//================================================================
+  int value_2 = LOW;
+    if (request.indexOf("/LED=ON_2") != -1)  {
+    digitalWrite(ledPinG, HIGH);
+    value_2 = HIGH;
+  }
+  if (request.indexOf("/LED=OFF_2") != -1)  {
+    digitalWrite(ledPinG, LOW);
+    value_2 = LOW;
+  }
+//================================================================
+
+//================================================================
+  int value_3 = LOW;
+    if (request.indexOf("/LED=ON_3") != -1)  {
+    digitalWrite(ledPinR, HIGH);
+    value_3 = HIGH;
+  }
+    if (request.indexOf("/LED=OFF_3") != -1)  {
+    digitalWrite(ledPinR, LOW);
+    value_3 = LOW;
+  }
+//================================================================
+
+//================================================================
+  int value_4 = LOW;
+    if (request.indexOf("/Motor=ON_4") != -1)  {
+    digitalWrite(Motor01, HIGH);
+    value_4 = HIGH;
+  }
+    if (request.indexOf("/Motor=OFF_4") != -1)  {
+    digitalWrite(Motor01, LOW);
+    value_4 = LOW;
+  }
+//================================================================
+
+// Pongo Dispositivos al valor que ha solicitado el cliente en la petición
+ 
+  // Devuelvo la respuesta al cliente -> El mensaje ha sido interpretado correctamente
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println(""); //  do not forget this one
+  
+  // A partir de aquí creo la página en raw HTML
+  client.println("<!DOCTYPE HTML>"); 
+  client.println("<html>");
+  client.println("");
+
+//================================================================  
+      client.println("LED Blue");
+      client.println("<br>");
+      //Se crean botones con enlace
+      //client.println("<a href=\"/LED=ON_1\"\"><button>Encender </button></a>"); // Los botones con enlace
+      //client.println("<a href=\"/LED=OFF_1\"\"><button>Apagar </button></a><br />"); // Los botones con enlace
+      //Se crean botones con estilos para modificar el estado del LED
+      client.println("<button type='button' onClick=location.href='/LED=ON_1' style='margin:auto; background-color:Aqua; color:#190707; padding:5px; border:2px solid black; width:200;'><h2> ENCENDER </h2> </button>");
+      client.println("<button type='button' onClick=location.href='/LED=OFF_1' style='margin:auto; background-color:DeepSkyBlue; color:#F6D8CE; padding:5px; border:2px solid black; width:200;'><h2> APAGAR </h2> </button><br><br>");     
+      client.println("<br><br>");
+//================================================================  
+      client.println("LED Green");
+      client.println("<br>");
+      //Se crean botones con enlace
+      //client.println("<a href=\"/LED=ON_2\"\"><button>Encender </button></a>"); // Los botones con enlace
+      //client.println("<a href=\"/LED=OFF_2\"\"><button>Apagar </button></a><br />"); // Los botones con enlace
+      //Se crean botones con estilos para modificar el estado del LED
+      client.println("<button type='button' onClick=location.href='/LED=ON_2' style='margin:auto; background-color:Lime; color:#190707; padding:5px; border:2px solid black; width:200;'><h2> ENCENDER </h2> </button>");
+      client.println("<button type='button' onClick=location.href='/LED=OFF_2' style='margin:auto; background-color:DeepSkyBlue; color:#F6D8CE; padding:5px; border:2px solid black; width:200;'><h2> APAGAR </h2> </button><br><br>");     
+      client.println("<br><br>");  
+//================================================================
+      client.println("LED Red");
+      client.println("<br>");
+      //Se crean botones con enlace
+      //client.println("<a href=\"/LED=ON_3\"\"><button>Encender </button></a>"); // Los botones con enlace
+      //client.println("<a href=\"/LED=OFF_3\"\"><button>Apagar </button></a><br />");  // Los botones con enlace
+      //Se crean botones con estilos para modificar el estado del LED
+      client.println("<button type='button' onClick=location.href='/LED=ON_3' style='margin:auto; background-color:OrangeRed; color:#190707; padding:5px; border:2px solid black; width:200;'><h2> ENCENDER </h2> </button>");
+      client.println("<button type='button' onClick=location.href='/LED=OFF_3' style='margin:auto; background-color:DeepSkyBlue; color:#F6D8CE; padding:5px; border:2px solid black; width:200;'><h2> APAGAR </h2> </button><br><br>");     
+      client.println("<br><br>");
+//================================================================
+      client.println("Motor");
+      client.println("<br>");
+      //Se crean botones con enlace
+      //client.println("<a href=\"/Motor=ON_4\"\"><button>Encender </button></a>"); // Los botones con enlace
+      //client.println("<a href=\"/Motor=OFF_4\"\"><button>Apagar </button></a><br />");  // Los botones con enlace
+      //Se crean botones con estilos para modificar el estado del LED
+      client.println("<button type='button' onClick=location.href='/Motor=ON_4' style='margin:auto; background-color:Gainsboro; color:#190707; padding:5px; border:2px solid black; width:200;'><h2> ENCENDER </h2> </button>");
+      client.println("<button type='button' onClick=location.href='/Motor=OFF_4' style='margin:auto; background-color:DeepSkyBlue; color:#F6D8CE; padding:5px; border:2px solid black; width:200;'><h2> APAGAR </h2> </button><br><br>");
+      
+      
+      
+      client.println("<br><br>");
+      client.println("</html>");
+
+//================================================================
+  
+  delay(1);
+  Serial.println("En espera de Instrucciones"); // Nos desconectamos del cliente
+  Serial.println("");
+ 
+}

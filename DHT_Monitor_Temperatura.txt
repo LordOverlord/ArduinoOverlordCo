@@ -1,0 +1,437 @@
+//Incluye Librerias
+#include <SPI.h>
+#include <Ethernet.h>
+#include <DHT.h>
+#include <Wire.h>
+#include <LCD.h>
+#include <RTClib.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C  lcd(0x27,2,1,0,4,5,6,7,3,POSITIVE); // 0x27 is the I2C bus address for an unmodified backpack
+
+DS1307 rtc;
+
+//Define Pines, Tipos y Dispositivos
+#define DHTPIN 2     // PIN conectado ao
+#define DHTTYPE DHT11   // Tipo de SensorDHT
+#define Boton 7     // PIN para conectar el pulsador
+
+long Valor; //Valor Variable para asignar al potenciometro y Calibracion de umbral
+
+int Relay01 = 3;      // (Active LOW)
+int Relay02 = 4;      // (Active LOW)
+int LEDPatrulla = 5;  // (Active LOW)
+int LEDManto = 6;     // (Active LOW)
+int ContaA=0;         // Contador
+int ContaB=0;         // Contador
+int ContaC=0;         // Contador
+int Umbral;           //Umbral de temperatura
+int Normal;           //Maxima Temperatura de Funcionamiento Correcta
+int Val;              // Variable del Mapeo
+int Modo=1;         
+
+int ValorBoton; // = 0; //ValorBoton almacena valor actual Boton
+int EstadoBoton = 0; // EstadoBoton 0 OFF, 1 ON
+int OldValorBoton = 0; // OldValorBoton almacena Valor Previo ValorBoton
+
+String Ofi="CDMX1";
+//String Ofi="VER01";
+//String Ofi="QRO01";
+
+byte mac[] = {
+  0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02
+};
+EthernetServer server(80);
+
+//Inicializa Sensor
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+  Ethernet.begin(mac);  
+  server.begin();
+  rtc.begin();
+  dht.begin();
+  lcd.begin (20,4); // Para 20 x 4 modulo LCD
+  pinMode(Relay01, OUTPUT);
+  pinMode(Relay02, OUTPUT);
+  pinMode(Boton, INPUT);
+  pinMode(LEDPatrulla, OUTPUT);
+  pinMode(LEDManto, OUTPUT);
+
+  lcd.setBacklightPin(3,POSITIVE);
+  lcd.setBacklight(HIGH);
+  lcd.home (); // set cursor to 0,0
+  
+  Serial.println("DHT11 Inicializando");
+  Serial.print("Server en: ");
+  Serial.println(Ethernet.localIP());
+  Serial.println("RTC Tiny");
+  Serial.print("NG CUSTOMS, S.C. SITE ");
+  Serial.println(Ofi);
+  lcd.print("DHT11 Inicializando!");
+  lcd.setCursor (0,1);
+  lcd.print("Server WEB UP!");
+  lcd.setCursor (0,2);
+  lcd.print("RTC Tiny Module UP!");
+  lcd.setCursor (0,3);
+  lcd.print("NG CUSTOMS SC ");
+  lcd.print(Ofi);
+  delay(3000);
+    
+  //====================================  
+  // Escucha para clientes entrantes a WEB
+  EthernetClient client = server.available();
+  //====================================
+
+  // Se envian las etiquetas Fijas al Display
+    lcd.clear();
+    lcd.setCursor (0,0);
+    lcd.print("T:");
+    lcd.setCursor (4,0);
+    lcd.print("'C");
+    lcd.setCursor (7,0);    
+    lcd.print("H: ");
+    lcd.setCursor (11,0);
+    lcd.print("%");
+    lcd.setCursor (13,0);
+    lcd.print("Umbr:");
+    lcd.setCursor (0,2);    
+    lcd.print("IP: ");
+    lcd.setCursor (4,2);  
+    lcd.print(Ethernet.localIP());
+}
+
+void loop() {
+  //Lee el Valor del Umbral de Temperatura seleccionable
+  Valor=analogRead(A0);
+  
+  // On Clock
+  DateTime now = rtc.now();
+  char buf[100];
+  strncpy(buf,"hh:mm:ss",100);  
+  
+  // listen for incoming clients
+  EthernetClient client = server.available();
+  
+  //Lectura de Temperatura o Humedad tomara cerca de 250 millisegundos!
+  //Las lecturas del sensor también pueden tener hasta 2 segundos de
+  //antigüedad (es un sensor muy lento)
+  float h = dht.readHumidity();
+  //Lee Temperatura en grados Celsius (valor predeterminado)
+  float t = dht.readTemperature();
+
+//====================================
+//Cambio el valor del Umbral y el valor de Normal para el rango de operacion del Sistema de Aire:
+
+  Val=map(Valor, 0, 1023, 18,28);
+  Umbral=Val;
+  Normal=Umbral-1;
+/*
+//====================================
+  //Fase de Cambio  */
+    
+    ValorBoton= digitalRead(Boton); // lee estado del Boton
+    if ((ValorBoton == 1) && (OldValorBoton == 0)){EstadoBoton=1-EstadoBoton;delay(10);}
+    OldValorBoton = ValorBoton; // valor antiguo estado
+    if (EstadoBoton==1){Modo=2; digitalWrite(LEDManto, HIGH);}// Cambia Modo
+    //if (ValorBoton==1){Modo=2; digitalWrite(LEDManto, LOW);}// Cambia Modo
+    //else{Modo=2;digitalWrite(LEDManto, HIGH);}// Cambia Modo
+    else {Modo=1; digitalWrite(LEDManto, LOW);}
+//====================================
+if (Modo ==2 )
+  {
+    Serial.println("Paro Mantenimiento");
+    Serial.print("T: ");
+    Serial.print(int(t));
+    Serial.print(" *C H: ");
+    Serial.print(int(h));
+    Serial.println(" %");
+    Serial.print("Hora Sistema: ");
+    Serial.println(now.format(buf));
+    Serial.print(ValorBoton);
+    Serial.print(Modo);
+    Serial.println("A");
+    //Imprimo Temperatura
+    lcd.setCursor (2,0);
+    lcd.print(int(t));
+    //Imprimo Porcentaje de Humedad
+    lcd.setCursor (9,0);
+    lcd.print(int(h));
+    lcd.setCursor (18,0);
+    lcd.print(int(Umbral));
+    //Imprimo Hora
+    lcd.setCursor (0,1);    
+    lcd.print(now.format(buf));
+    lcd.setCursor (9,1);
+    lcd.print(" ** STOP **");
+    lcd.setCursor (15,2);
+    lcd.print(ValorBoton);
+    lcd.print(Modo);
+    Serial.print(ValorBoton);
+    Serial.print(Modo);
+    //lcd.print(EstadoBoton);
+    //lcd.print(OldValorBoton);
+    lcd.setCursor (0,3);
+    lcd.print("NG CUSTOMS SC. ");
+    lcd.print(Ofi);
+    digitalWrite(Relay01, LOW);
+    digitalWrite(Relay02, LOW);
+    digitalWrite(LEDPatrulla, LOW);
+    ContaA=0;
+    ContaC=0;    
+    delay(1000);
+  }
+
+//====================================
+
+  //Verifica si alguna lectura falló intentar de nuevo
+  //if (isnan(h) || isnan(t) && Modo == 1)
+  if (isnan(t) && Modo == 1) 
+  { ContaC=ContaC+1;
+    Serial.println("Falla Sensor DHT");
+    Serial.print("Hora Sistema: ");
+    Serial.println(now.format(buf));
+    Serial.print(ValorBoton);
+    Serial.print(Modo);
+    Serial.println("B");
+
+    
+    //Limpio Campos de Valores
+    //Imprimo Temperatura      
+    lcd.setCursor (2,0);
+    lcd.print("  ");
+    //Imprimo Porcentaje de Humedad
+    lcd.setCursor (9,0);
+    lcd.print("  ");
+    lcd.setCursor (18,0);
+    lcd.print(int(Umbral));
+    //Imprimo Hora
+    lcd.setCursor (0,1);  
+    lcd.print(now.format(buf));
+    lcd.setCursor (9,1);
+    lcd.print("Fail Sensor ");
+    lcd.setCursor (15,2);
+    lcd.print(ValorBoton);
+    lcd.print(Modo);
+    //lcd.print(EstadoBoton);
+    //lcd.print(OldValorBoton);
+    lcd.setCursor (0,3);
+    lcd.print("***Inicia Turbina***");
+    digitalWrite(Relay01, HIGH);
+    digitalWrite(LEDPatrulla, HIGH);
+        if (ContaC >= 20)
+          {      
+            digitalWrite(Relay02, HIGH);
+          }
+    ContaB=0;
+    ContaA=0;
+    delay(1000);              
+  }
+//====================================
+if (t <= Normal && Modo == 1)
+  {
+    Serial.println("Func OK");
+    Serial.print("T: ");
+    Serial.print(int(t));
+    Serial.print(" *C H: ");
+    Serial.print(int(h));
+    Serial.println(" %");
+    Serial.print("Hora Sistema: ");
+    Serial.println(now.format(buf));
+    Serial.print(ValorBoton);
+    Serial.print(Modo);
+    Serial.println("C");
+
+    //Imprimo Temperatura
+    lcd.setCursor (2,0);
+    lcd.print(int(t));
+    //Imprimo Porcentaje de Humedad
+    lcd.setCursor (9,0);
+    lcd.print(int(h));
+    lcd.setCursor (18,0);
+    lcd.print(int(Umbral));
+    //Imprimo Hora
+    lcd.setCursor (0,1);    
+    lcd.print(now.format(buf));
+    lcd.setCursor (9,1);
+    lcd.print("Ok Function");
+    lcd.setCursor (15,2);
+    lcd.print(ValorBoton);
+    lcd.print(Modo);
+    //lcd.print(EstadoBoton);
+    //lcd.print(OldValorBoton);
+    lcd.setCursor (0,3);
+    lcd.print("NG CUSTOMS SC. ");
+    lcd.print(Ofi);
+    digitalWrite(Relay01, LOW);
+    digitalWrite(Relay02, LOW);
+    digitalWrite(LEDPatrulla, LOW);
+    ContaA=0;
+    ContaC=0;    
+    delay(1000);
+  }
+  
+//====================================  
+if (t >= Umbral && Modo == 1)
+  { ContaA=ContaA+1;
+    Serial.println("Falla Ventilacion");
+    Serial.print("T: ");
+    Serial.print(int(t));
+    Serial.print(" *C H: ");
+    Serial.print(int(h));
+    Serial.println(" %");
+    Serial.print("Hora Sistema: ");
+    Serial.println(now.format(buf));
+    Serial.print(ValorBoton);
+    Serial.print(Modo);
+    Serial.println("D");
+    //Imprimo Temperatura
+    lcd.setCursor (2,0);
+    lcd.print(int(t));
+    //Imprimo Porcentaje de Humedad
+    lcd.setCursor (9,0);
+    lcd.print(int(h));
+    lcd.setCursor (18,0);
+    lcd.print(int(Umbral));
+    //Imprimo Hora
+    lcd.setCursor (0,1);    
+    lcd.print(now.format(buf));
+    lcd.setCursor (9,1);
+    lcd.print("Clima fail ");
+    lcd.setCursor (15,2);
+    lcd.print(ValorBoton);
+    lcd.print(Modo);
+    //lcd.print(EstadoBoton);
+    //lcd.print(OldValorBoton);
+    lcd.setCursor (0,3);
+    lcd.print("***Inicia Turbina***");
+    digitalWrite(Relay01, HIGH);
+    digitalWrite(LEDPatrulla, HIGH);
+    if (ContaA >= 20)
+      {
+        digitalWrite(Relay02, HIGH);
+      }
+    ContaB=0;
+    ContaC=0;
+    delay(1000);
+  }
+//==============================
+
+  if (client) {
+    Serial.println("new client");
+    //Solicitud http termina con una línea en blanco
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+        //si ha llegado al final de la línea (recibió una nueva línea/caracter)
+        //y la línea está en blanco, la solicitud http ha finalizado,
+        //para poder enviar una respuesta
+        if (c == '\n' && currentLineIsBlank) {
+          // Se envia un encabezado de respuesta http estándar
+          client.println("HTTP/1.1 200 OK");
+          //client.println("Content-Type: text/html");
+          //client.println("Connection: close");  //la conexión se cerrará después de completar la respuesta
+          client.println("Refresh: 5");  // refresh la pagina automaticamente cada 5 segundos
+          client.println();
+          client.println("<!DOCTYPE HTML>");
+          client.println("<html>");
+//=================================================
+          client.println("<br>");
+          client.println("NG CUSTOMS, S.C.");
+          client.println("<br>");
+          client.println("SITE ");
+          client.println(Ofi);
+          client.println("<br><br><br>");
+          client.println("Informacion Sistema Ventilacion");
+          client.println("<br>");
+          client.println("Hora Sistema: ");
+          client.println(now.format(buf));
+          client.println("<br>");
+          //============================================
+          if (isnan(t) && Modo == 1)
+            {
+            client.println("Falla Sensor ");
+            client.println("<br>");
+            client.println("Turbina ON");
+            client.println("<br>");
+            client.print(ValorBoton);
+            client.print(Modo);
+            //client.print(EstadoBoton);
+            //client.print(OldValorBoton);
+            }
+          //============================================
+          if (t <= Normal && Modo == 1)
+            {
+            client.println("Sistema OK T: "); 
+            client.println(int(t));
+            client.println(" *C H: ");
+            client.println(int(h));
+            client.println(" %");
+            client.println("<br>");
+            client.println("Funcion normal por debajo de: ");
+            client.println(Umbral);
+            client.println(" *C");
+            client.println("<br>");
+            client.print(ValorBoton);
+            client.print(Modo);
+            //client.print(EstadoBoton);
+            //client.print(OldValorBoton);
+            }
+          //============================================
+          if (t >= Umbral && Modo == 1)
+            {
+            client.println("Falla Ventilacion T: ");
+            client.println(int(t));
+            client.println(" *C H: ");
+            client.println(int(h));
+            client.println(" %");
+            client.println("<br>");
+            client.println("Turbina ON");
+            client.println("<br>");
+            client.print(ValorBoton);
+            client.print(Modo);
+            //client.print(EstadoBoton);
+            //client.print(OldValorBoton);
+            }
+          //============================================
+          if (Modo != 1) {
+            client.println("Sistema OK T: "); 
+            client.println(int(t));
+            client.println(" *C H: ");
+            client.println(int(h));
+            client.println(" %");
+            client.println("<br>");
+            client.println("Mantenimiento");
+            client.println("<br>");
+            client.print(ValorBoton);
+            client.print(Modo);
+            //client.print(EstadoBoton);
+            //client.print(OldValorBoton);
+            }
+          //============================================
+          client.println("<br><br>");
+          client.println("Autorefresh");
+                                        
+//=================================================
+          client.println("</html>");
+          break;
+        }
+        if (c == '\n') {
+          // you're starting a new line
+          currentLineIsBlank = true;
+        } else if (c != '\r') {
+          // Se ha realizado una consulta
+          currentLineIsBlank = false;
+        }
+      }
+    }
+    // dar tiempo al navegador web para recibir los datos
+    delay(1);
+    // cerrar la conexión:
+    client.stop();
+    Serial.println("Cliente Desconectado");
+  }
+//==============================
+}
